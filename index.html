@@ -1,0 +1,1743 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Web - Blue Edition</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        bluebrand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                            darkbg: '#0a1128',
+                            darkpanel: '#101d42',
+                            cardBg: '#182754',
+                            bubbleOut: '#1d4ed8',
+                            bubbleIn: '#1e293b'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.3);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.5);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(59, 130, 246, 0.8);
+        }
+
+        /* Blue Chat Pattern Background */
+        .chat-pattern-blue {
+            background-color: #0a1128;
+            background-image: radial-gradient(#1d4ed8 1.2px, transparent 0);
+            background-size: 24px 24px;
+        }
+
+        /* Dynamic CSS Variables for Custom Themes */
+        :root {
+            --app-accent: #2563eb;
+            --app-bubble-out: #1d4ed8;
+            --app-bubble-in: #1e293b;
+        }
+
+        .bubble-outgoing { background-color: var(--app-bubble-out) !important; }
+        .bubble-incoming { background-color: var(--app-bubble-in) !important; }
+
+        /* Notification Banner Animations */
+        @keyframes slideDownIn {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .animate-slide-down {
+            animation: slideDownIn 0.35s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="h-full bg-slate-950 font-sans text-slate-100 flex justify-center items-center p-0 md:p-4 selection:bg-blue-600 selection:text-white">
+
+    <!-- FLOATING IN-APP NOTIFICATION BANNER -->
+    <div id="inAppNotification" class="fixed top-4 right-4 z-50 max-w-sm w-full bg-slate-900/95 border border-blue-500/80 rounded-2xl shadow-2xl p-3.5 backdrop-blur-md hidden animate-slide-down transition-all">
+        <div class="flex items-center gap-3 cursor-pointer" id="inAppNotifContent">
+            <img id="notifAvatar" src="https://placehold.co/100x100/1d4ed8/ffffff?text=N" class="w-12 h-12 rounded-full object-cover border-2 border-blue-500 shrink-0">
+            <div class="flex-1 overflow-hidden">
+                <div class="flex justify-between items-center mb-0.5">
+                    <h4 id="notifSender" class="font-bold text-sm text-white truncate">Nome do Contato</h4>
+                    <span id="notifTime" class="text-[10px] text-blue-400 font-semibold shrink-0">12:00</span>
+                </div>
+                <p id="notifMessage" class="text-xs text-slate-300 truncate">Sua mensagem aqui...</p>
+            </div>
+            <button onclick="dismissInAppNotif(event)" class="text-slate-400 hover:text-white p-1.5 rounded-full hover:bg-slate-800 shrink-0">
+                <i class="fa-solid fa-xmark text-xs"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div id="app" class="w-full h-full max-w-[1600px] md:h-[95vh] bg-bluebrand-darkpanel rounded-none md:rounded-2xl shadow-2xl overflow-hidden flex flex-col relative border border-blue-900/50">
+
+        <!-- AUTH MODAL / SCREEN (Login & Cadastro) -->
+        <div id="authScreen" class="absolute inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="bg-bluebrand-darkpanel border border-blue-800/60 w-full max-w-md rounded-2xl p-6 md:p-8 shadow-2xl text-slate-100 relative overflow-hidden">
+                <div class="absolute -top-12 -right-12 w-36 h-36 bg-blue-600/20 rounded-full blur-2xl"></div>
+                
+                <div class="text-center mb-6">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-600/20 text-blue-500 mb-3 text-3xl ring-4 ring-blue-500/10">
+                        <i class="fa-brands fa-whatsapp"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white tracking-wide">WhatsApp <span class="text-blue-500">Blue</span></h2>
+                    <p class="text-xs text-slate-400 mt-1">Conecte-se com código de amigo, chamadas e notificações ativas</p>
+                </div>
+
+                <!-- Auth Tabs -->
+                <div class="flex bg-slate-900/80 p-1 rounded-xl mb-6 border border-blue-900/40">
+                    <button id="tabLogin" onclick="switchAuthTab('login')" class="flex-1 py-2 text-sm font-semibold rounded-lg transition-all bg-blue-600 text-white shadow-lg">Entrar</button>
+                    <button id="tabRegister" onclick="switchAuthTab('register')" class="flex-1 py-2 text-sm font-semibold rounded-lg text-slate-400 hover:text-white transition-all">Cadastrar</button>
+                </div>
+
+                <!-- Login Form -->
+                <form id="loginForm" onsubmit="handleAuthSubmit(event, 'login')" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Nome de Usuário</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-3 text-blue-400"><i class="fa-solid fa-user"></i></span>
+                            <input type="text" id="loginUsername" required class="w-full bg-slate-900/90 border border-blue-900/60 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition" placeholder="Ex: usuario123">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Senha</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-3 text-blue-400"><i class="fa-solid fa-lock"></i></span>
+                            <input type="password" id="loginPassword" required class="w-full bg-slate-900/90 border border-blue-900/60 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition" placeholder="••••••••">
+                        </div>
+                    </div>
+                    <button type="submit" id="loginBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg transition active:scale-[0.98] flex justify-center items-center gap-2">
+                        <span>Entrar no WhatsApp Blue</span> <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                </form>
+
+                <!-- Register Form -->
+                <form id="registerForm" onsubmit="handleAuthSubmit(event, 'register')" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Escolha um Usuário Único</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-3 text-blue-400"><i class="fa-solid fa-at"></i></span>
+                            <input type="text" id="regUsername" required class="w-full bg-slate-900/90 border border-blue-900/60 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition" placeholder="Ex: joaogamer">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Apelido (Nome de Exibição)</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-3 text-blue-400"><i class="fa-solid fa-id-card"></i></span>
+                            <input type="text" id="regDisplayName" required class="w-full bg-slate-900/90 border border-blue-900/60 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition" placeholder="Ex: João Silva">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Senha</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-3 text-blue-400"><i class="fa-solid fa-key"></i></span>
+                            <input type="password" id="regPassword" required class="w-full bg-slate-900/90 border border-blue-900/60 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition" placeholder="Sua senha">
+                        </div>
+                    </div>
+                    <button type="submit" id="regBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg transition active:scale-[0.98] flex justify-center items-center gap-2">
+                        <span>Criar Minha Conta</span> <i class="fa-solid fa-user-plus text-xs"></i>
+                    </button>
+                </form>
+
+                <!-- Feedback Alert -->
+                <div id="authAlert" class="mt-4 p-3 rounded-xl text-xs font-medium hidden flex items-center gap-2"></div>
+            </div>
+        </div>
+
+        <!-- MAIN APP INTERFACE -->
+        <div class="flex-1 flex overflow-hidden relative">
+
+            <!-- SIDEBAR (LEFT) -->
+            <div id="sidebar" class="w-full md:w-80 lg:w-96 bg-bluebrand-darkpanel border-r border-blue-900/50 flex flex-col h-full z-20 transition-all duration-300">
+                
+                <!-- Sidebar Top User Bar -->
+                <div class="p-3 bg-slate-900/90 backdrop-blur border-b border-blue-900/50 flex items-center justify-between">
+                    <div class="flex items-center gap-3 cursor-pointer" onclick="openProfileModal()">
+                        <div class="relative">
+                            <img id="myAvatar" src="https://placehold.co/100x100/1d4ed8/ffffff?text=U" class="w-10 h-10 rounded-full object-cover border-2 border-blue-500">
+                            <span class="w-3 h-3 bg-blue-500 rounded-full absolute bottom-0 right-0 border-2 border-slate-900"></span>
+                        </div>
+                        <div class="leading-tight overflow-hidden">
+                            <h3 id="myNickname" class="font-bold text-sm text-white truncate">Carregando...</h3>
+                            <p id="myCodeDisplay" class="text-xs text-blue-400 font-mono truncate">Cód: -----</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1 text-slate-300">
+                        <button id="notifBellBtn" onclick="requestNotificationPermission()" class="p-2 hover:bg-blue-900/40 rounded-full transition text-slate-400" title="Ativar Notificações no Navegador">
+                            <i class="fa-solid fa-bell"></i>
+                        </button>
+                        <button onclick="openSettingsModal()" class="p-2 hover:bg-blue-900/40 rounded-full transition text-blue-400" title="Personalizar Tema e Notificações"><i class="fa-solid fa-palette"></i></button>
+                        <button onclick="openProfileModal()" class="p-2 hover:bg-blue-900/40 rounded-full transition text-slate-300" title="Perfil"><i class="fa-solid fa-user-pen"></i></button>
+                        <button onclick="logout()" class="p-2 hover:bg-rose-500/20 text-rose-400 rounded-full transition" title="Sair"><i class="fa-solid fa-right-from-bracket"></i></button>
+                    </div>
+                </div>
+
+                <!-- MAIN 3-TAB NAVIGATION SYSTEM -->
+                <div class="flex bg-slate-900/80 border-b border-blue-900/50 p-1 text-xs font-semibold text-slate-400">
+                    <button id="navTab1" onclick="switchSidebarTab(1)" class="flex-1 py-2.5 rounded-lg flex flex-col items-center justify-center gap-1 transition-all bg-blue-600 text-white shadow-md">
+                        <i class="fa-solid fa-comments text-sm"></i>
+                        <span>Conversas</span>
+                    </button>
+                    <button id="navTab2" onclick="switchSidebarTab(2)" class="flex-1 py-2.5 rounded-lg flex flex-col items-center justify-center gap-1 transition-all hover:text-white">
+                        <i class="fa-solid fa-user-plus text-sm"></i>
+                        <span>Convites</span>
+                    </button>
+                    <button id="navTab3" onclick="switchSidebarTab(3)" class="flex-1 py-2.5 rounded-lg flex flex-col items-center justify-center gap-1 transition-all hover:text-white">
+                        <i class="fa-solid fa-phone text-sm"></i>
+                        <span>Ligações</span>
+                    </button>
+                </div>
+
+                <!-- TAB CONTENT AREA -->
+                <div class="flex-1 overflow-y-auto relative">
+                    
+                    <!-- TAB 1: CONVERSAS & GRUPOS -->
+                    <div id="tabContent1" class="h-full flex flex-col">
+                        <!-- Action Bar for Groups & Contacts -->
+                        <div class="p-2.5 bg-slate-900/50 border-b border-blue-900/40 flex flex-col gap-2">
+                            <div class="relative">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
+                                <input type="text" id="chatSearchInput" oninput="filterChatList()" placeholder="Pesquisar conversas ou grupos..." class="w-full bg-slate-950 border border-blue-900/50 rounded-xl py-1.5 pl-8 pr-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500">
+                            </div>
+                            <button onclick="openCreateGroupModal()" class="w-full py-2 px-3 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 font-semibold rounded-xl text-xs flex items-center justify-center gap-2 transition">
+                                <i class="fa-solid fa-users-line text-sm text-blue-400"></i> Criar Grupo
+                            </button>
+                        </div>
+
+                        <!-- Chat & Friends List -->
+                        <div id="chatList" class="flex-1 divide-y divide-blue-900/20 overflow-y-auto">
+                            <div class="p-8 text-center text-slate-400 text-xs">
+                                <i class="fa-solid fa-circle-notch fa-spin text-xl mb-2 text-blue-500"></i>
+                                <p>Carregando conversas e amigos...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: CONVITES, CÓDIGO DE AMIGO E LINKS -->
+                    <div id="tabContent2" class="p-4 space-y-5 hidden">
+                        
+                        <!-- My Unique Numeric Friend Code -->
+                        <div class="bg-bluebrand-cardBg border border-blue-700/50 rounded-2xl p-4 shadow-lg text-center relative overflow-hidden">
+                            <span class="text-[10px] uppercase tracking-wider font-bold text-blue-400">Seu Código Único de Amigo</span>
+                            <div class="flex items-center justify-center gap-3 my-2">
+                                <span id="myCodeNum" class="text-3xl font-black font-mono tracking-widest text-white">------</span>
+                                <button onclick="copyFriendCode()" class="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs transition" title="Copiar Código">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </div>
+                            <p class="text-[11px] text-slate-300">Compartilhe este código de números para outros adicionarem você instantaneamente.</p>
+                        </div>
+
+                        <!-- Add Friend via Numeric Code -->
+                        <div class="bg-slate-900/80 border border-blue-900/50 rounded-2xl p-4">
+                            <h4 class="text-xs font-bold text-blue-400 uppercase tracking-wide mb-2"><i class="fa-solid fa-key mr-1"></i> Adicionar com Código</h4>
+                            <form onsubmit="handleAddByCode(event)" class="space-y-2">
+                                <input type="text" id="friendCodeInput" maxlength="8" placeholder="Digite o código (ex: 849201)" class="w-full bg-slate-950 border border-blue-900/60 rounded-xl py-2 px-3 text-sm text-white font-mono placeholder-slate-500 focus:outline-none focus:border-blue-500">
+                                <button type="submit" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs shadow-md transition flex items-center justify-center gap-1">
+                                    <i class="fa-solid fa-user-plus"></i> Adicionar Amigo
+                                </button>
+                            </form>
+                            <div id="codeFeedback" class="mt-2 text-xs hidden"></div>
+                        </div>
+
+                        <!-- Invite Link & GitHub Share -->
+                        <div class="bg-slate-900/80 border border-blue-900/50 rounded-2xl p-4 space-y-3">
+                            <h4 class="text-xs font-bold text-blue-400 uppercase tracking-wide"><i class="fa-solid fa-share-nodes mr-1"></i> Links de Compartilhamento</h4>
+                            
+                            <button onclick="copyInviteLink()" class="w-full py-2.5 px-3 bg-blue-900/40 hover:bg-blue-900/60 border border-blue-700/50 text-blue-200 rounded-xl text-xs font-medium flex items-center justify-between transition">
+                                <span class="flex items-center gap-2"><i class="fa-solid fa-link text-blue-400"></i> Copiar Link de Convite</span>
+                                <i class="fa-solid fa-arrow-right-long text-xs"></i>
+                            </button>
+
+                            <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 px-3 bg-slate-950 hover:bg-slate-800 border border-slate-700/60 text-slate-200 rounded-xl text-xs font-medium flex items-center justify-between transition">
+                                <span class="flex items-center gap-2"><i class="fa-brands fa-github text-lg text-white"></i> Repositório no GitHub</span>
+                                <i class="fa-solid fa-arrow-up-right-from-square text-xs text-slate-400"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: HISTÓRICO DE LIGAÇÕES -->
+                    <div id="tabContent3" class="p-2 space-y-2 hidden">
+                        <div class="p-2 text-[11px] font-semibold text-blue-400 uppercase tracking-wider flex justify-between items-center border-b border-blue-900/30">
+                            <span><i class="fa-solid fa-phone-volume mr-1"></i> Chamadas Recentes</span>
+                            <button onclick="clearCallHistory()" class="text-slate-500 hover:text-rose-400"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                        <div id="callHistoryList" class="divide-y divide-blue-900/20">
+                            <div class="p-8 text-center text-slate-400 text-xs">Nenhuma ligação realizada recentemente.</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- CHAT AREA (RIGHT) -->
+            <div id="chatArea" class="w-full md:flex-1 bg-bluebrand-darkbg flex flex-col h-full absolute md:relative inset-0 z-30 translate-x-full md:translate-x-0 transition-transform duration-300">
+                
+                <!-- Unselected Chat Placeholder -->
+                <div id="noChatSelected" class="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                    <div class="w-24 h-24 rounded-full bg-blue-600/10 flex items-center justify-center text-blue-500 text-5xl mb-4 ring-8 ring-blue-500/5 shadow-inner">
+                        <i class="fa-brands fa-whatsapp"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white mb-2">WhatsApp Web <span class="text-blue-500">Blue</span></h2>
+                    <p class="text-xs text-slate-400 max-w-md leading-relaxed">Selecione uma conversa na aba inicial ou adicione amigos digitando o Código Numérico Único na aba de Convites.</p>
+                    <div class="mt-8 flex items-center gap-2 text-[11px] text-blue-400 bg-blue-900/20 px-4 py-2 rounded-full border border-blue-800/40">
+                        <i class="fa-solid fa-bell"></i> Notificações ativas no sistema e popups na tela
+                    </div>
+                </div>
+
+                <!-- Active Chat Panel -->
+                <div id="activeChatContainer" class="flex-1 flex flex-col h-full hidden relative">
+                    
+                    <!-- Chat Header -->
+                    <div class="p-3 bg-slate-900/95 backdrop-blur border-b border-blue-900/50 flex items-center justify-between z-10">
+                        <div class="flex items-center gap-3">
+                            <button onclick="closeMobileChat()" class="md:hidden text-slate-300 p-2 hover:bg-blue-900/40 rounded-full">
+                                <i class="fa-solid fa-arrow-left"></i>
+                            </button>
+                            <div class="relative cursor-pointer">
+                                <img id="activeContactAvatar" src="https://placehold.co/100x100/1d4ed8/ffffff?text=C" class="w-10 h-10 rounded-full object-cover border border-blue-500">
+                                <span id="activeContactStatusBadge" class="w-3 h-3 bg-slate-500 rounded-full absolute bottom-0 right-0 border-2 border-slate-900"></span>
+                            </div>
+                            <div class="leading-tight">
+                                <h3 id="activeContactName" class="font-bold text-sm text-white">Nome do Contato</h3>
+                                <p id="activeContactStatus" class="text-[11px] text-blue-400">Offline</p>
+                            </div>
+                        </div>
+
+                        <!-- Action Icons -->
+                        <div class="flex items-center gap-1 md:gap-2 text-slate-300">
+                            <button onclick="startCall('audio')" class="p-2.5 hover:bg-blue-900/40 rounded-full transition text-blue-400" title="Ligação de Voz"><i class="fa-solid fa-phone"></i></button>
+                            <button onclick="startCall('video')" class="p-2.5 hover:bg-blue-900/40 rounded-full transition text-blue-400" title="Chamada de Vídeo"><i class="fa-solid fa-video"></i></button>
+                            <button onclick="startScreenShare()" class="p-2.5 hover:bg-blue-900/40 rounded-full transition text-sky-400" title="Transmissão de Tela"><i class="fa-solid fa-desktop"></i></button>
+                            <button onclick="triggerCameraCapture()" class="p-2.5 hover:bg-blue-900/40 rounded-full transition text-slate-300" title="Tirar Foto com Webcam"><i class="fa-solid fa-camera"></i></button>
+                            <button onclick="openSettingsModal()" class="p-2.5 hover:bg-blue-900/40 rounded-full transition text-slate-300" title="Mudar Fundo do Chat"><i class="fa-solid fa-image"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Messages Container -->
+                    <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-3 chat-pattern-blue relative">
+                        <!-- Dynamic Messages -->
+                    </div>
+
+                    <!-- Sticker Picker Drawer -->
+                    <div id="stickerDrawer" class="hidden bg-slate-900 border-t border-blue-900/50 p-3 max-h-48 overflow-y-auto">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-semibold text-blue-400 uppercase tracking-wide">Figurinhas & Stickers</span>
+                            <button onclick="toggleStickerDrawer()" class="text-slate-400 hover:text-white text-xs"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <div class="grid grid-cols-6 gap-2" id="stickerGrid"></div>
+                    </div>
+
+                    <!-- Bottom Input Controls -->
+                    <div class="p-3 bg-slate-900/95 backdrop-blur border-t border-blue-900/50 flex items-center gap-2">
+                        
+                        <!-- Attachments Menu -->
+                        <div class="relative">
+                            <button onclick="toggleAttachMenu()" class="p-2.5 text-blue-400 hover:bg-blue-900/40 rounded-full transition"><i class="fa-solid fa-paperclip"></i></button>
+                            <div id="attachMenu" class="hidden absolute bottom-12 left-0 bg-slate-900 border border-blue-800/60 rounded-xl shadow-2xl p-2 w-48 flex flex-col gap-1 z-30">
+                                <label class="flex items-center gap-3 p-2 hover:bg-blue-900/50 rounded-lg cursor-pointer text-xs text-slate-200">
+                                    <i class="fa-solid fa-image text-blue-400 text-base"></i> Enviar Foto
+                                    <input type="file" accept="image/*" class="hidden" onchange="uploadImageMessage(event)">
+                                </label>
+                                <button onclick="toggleStickerDrawer()" class="flex items-center gap-3 p-2 hover:bg-blue-900/50 rounded-lg text-xs text-slate-200 text-left">
+                                    <i class="fa-solid fa-face-smile text-amber-400 text-base"></i> Figurinhas
+                                </button>
+                                <button onclick="triggerCameraCapture()" class="flex items-center gap-3 p-2 hover:bg-blue-900/50 rounded-lg text-xs text-slate-200 text-left">
+                                    <i class="fa-solid fa-camera text-sky-400 text-base"></i> Câmera Instantânea
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Audio Recorder Indicator -->
+                        <div id="audioRecordBar" class="hidden flex-1 bg-rose-950/40 border border-rose-500/30 rounded-2xl px-4 py-2 flex items-center justify-between">
+                            <div class="flex items-center gap-2 text-rose-400 text-xs font-semibold">
+                                <span class="w-2.5 h-2.5 bg-rose-500 rounded-full animate-ping"></span>
+                                Gravando áudio... <span id="recordTimer">00:00</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="cancelAudioRecording()" class="p-1.5 text-slate-400 hover:text-rose-400 text-xs"><i class="fa-solid fa-trash"></i> Cancelar</button>
+                                <button onclick="stopAndSendAudio()" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold flex items-center gap-1"><i class="fa-solid fa-paper-plane"></i> Enviar</button>
+                            </div>
+                        </div>
+
+                        <!-- Text Input Form -->
+                        <form id="msgForm" onsubmit="sendTextMessage(event)" class="flex-1 flex items-center gap-2">
+                            <input type="text" id="messageInput" placeholder="Digite uma mensagem..." class="w-full bg-slate-950 border border-blue-900/50 rounded-2xl py-2.5 px-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500">
+                            <button type="submit" class="p-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-full transition shadow-lg flex items-center justify-center shrink-0 w-10 h-10">
+                                <i class="fa-solid fa-paper-plane text-xs"></i>
+                            </button>
+                        </form>
+
+                        <!-- Microphone Recorder Trigger -->
+                        <button id="micBtn" onclick="startAudioRecording()" class="p-2.5 text-blue-400 hover:bg-blue-900/40 rounded-full transition" title="Gravar Mensagem de Voz">
+                            <i class="fa-solid fa-microphone"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CREATE GROUP MODAL -->
+    <div id="createGroupModal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-blue-900/60 rounded-2xl w-full max-w-md p-6 text-slate-100 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-users-line text-blue-500"></i> Criar Novo Grupo</h3>
+                <button onclick="closeCreateGroupModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form onsubmit="handleCreateGroupSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-blue-400 uppercase mb-1">Nome do Grupo</label>
+                    <input type="text" id="groupNameInput" required placeholder="Ex: Galera da Faculdade" class="w-full bg-slate-950 border border-blue-900/60 rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-blue-400 uppercase mb-1">Selecione os Participantes</label>
+                    <div id="groupMembersList" class="max-h-40 overflow-y-auto bg-slate-950 rounded-xl border border-blue-900/50 divide-y divide-blue-900/30 p-2 space-y-1">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg transition">Criar Grupo</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- CALL MODAL -->
+    <div id="callModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md hidden flex flex-col items-center justify-between p-6">
+        <div class="text-center mt-4">
+            <span id="callTypeBadge" class="bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider border border-blue-500/30">Chamada de Vídeo</span>
+            <h3 id="callContactName" class="text-2xl font-bold text-white mt-2">Contato</h3>
+            <p id="callStatusText" class="text-sm text-slate-400 mt-1">Conectando serviço de mídia...</p>
+        </div>
+
+        <div class="relative w-full max-w-4xl h-[60vh] bg-slate-900 border border-blue-900/50 rounded-2xl overflow-hidden flex items-center justify-center my-auto shadow-2xl">
+            <video id="remoteVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+            <div id="noRemoteVideoPlaceholder" class="absolute flex flex-col items-center justify-center text-slate-500">
+                <i class="fa-solid fa-user-circle text-8xl mb-3 text-slate-700"></i>
+                <p id="remoteVideoLabel" class="text-sm text-slate-400">Aguardando vídeo/voz do destinatário...</p>
+            </div>
+
+            <!-- PIP Local Video -->
+            <div class="absolute bottom-4 right-4 w-36 h-48 bg-slate-800 border-2 border-blue-600 rounded-xl overflow-hidden shadow-2xl">
+                <video id="localVideo" autoplay playsinline muted class="w-full h-full object-cover"></video>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4 mb-6">
+            <button id="toggleMicBtn" onclick="toggleMuteMic()" class="w-12 h-12 rounded-full bg-slate-800 text-white hover:bg-slate-700 flex items-center justify-center text-lg"><i class="fa-solid fa-microphone"></i></button>
+            <button id="toggleCamBtn" onclick="toggleMuteCam()" class="w-12 h-12 rounded-full bg-slate-800 text-white hover:bg-slate-700 flex items-center justify-center text-lg"><i class="fa-solid fa-video"></i></button>
+            <button onclick="startScreenShareInCall()" class="w-12 h-12 rounded-full bg-slate-800 text-sky-400 hover:bg-slate-700 flex items-center justify-center text-lg" title="Compartilhar Tela"><i class="fa-solid fa-desktop"></i></button>
+            <button onclick="endCall()" class="w-14 h-14 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center text-xl shadow-lg"><i class="fa-solid fa-phone-slash"></i></button>
+        </div>
+    </div>
+
+    <!-- CAMERA CAPTURE MODAL -->
+    <div id="cameraModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur flex flex-col items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-blue-900/50 rounded-2xl p-4 max-w-lg w-full text-center shadow-2xl">
+            <h3 class="text-lg font-bold text-white mb-3 flex items-center justify-center gap-2"><i class="fa-solid fa-camera text-blue-500"></i> Tirar Foto</h3>
+            <div class="relative w-full h-64 bg-black rounded-xl overflow-hidden mb-4 border border-blue-900/30">
+                <video id="cameraPreview" autoplay playsinline class="w-full h-full object-cover"></video>
+            </div>
+            <canvas id="cameraCanvas" class="hidden"></canvas>
+            <div class="flex justify-center gap-3">
+                <button onclick="closeCameraModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold">Cancelar</button>
+                <button onclick="takeSnapAndSend()" class="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center gap-2"><i class="fa-solid fa-paper-plane"></i> Tirar e Enviar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div id="settingsModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-blue-900/60 rounded-2xl w-full max-w-md p-6 text-slate-100 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-palette text-blue-500"></i> Personalizar Aparência</h3>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-xs font-semibold text-blue-400 uppercase mb-2">Notificações no Navegador</label>
+                    <button onclick="requestNotificationPermission()" class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-md">
+                        <i class="fa-solid fa-bell"></i> Solicitar Permissão de Notificação
+                    </button>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-blue-400 uppercase mb-2">Tom de Azul do Sistema</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button onclick="setAppTheme('royal')" class="h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white text-xs font-bold shadow-md">Royal Blue</button>
+                        <button onclick="setAppTheme('indigo')" class="h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-md">Índigo</button>
+                        <button onclick="setAppTheme('cyan')" class="h-10 rounded-xl bg-cyan-600 flex items-center justify-center text-white text-xs font-bold shadow-md">Ciano</button>
+                        <button onclick="setAppTheme('dark')" class="h-10 rounded-xl bg-slate-800 border border-blue-500 flex items-center justify-center text-white text-xs font-bold shadow-md">Escuro</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-blue-400 uppercase mb-2">Papel de Parede do Chat</label>
+                    <div class="space-y-2">
+                        <label class="block w-full py-2.5 px-4 bg-blue-900/30 hover:bg-blue-900/50 border border-blue-800/60 rounded-xl text-xs text-center cursor-pointer font-medium text-blue-300 transition">
+                            <i class="fa-solid fa-upload mr-1"></i> Enviar Imagem do seu Computador
+                            <input type="file" accept="image/*" class="hidden" onchange="setCustomWallpaper(event)">
+                        </label>
+                        <button onclick="resetWallpaper()" class="w-full py-2 bg-slate-950/60 hover:bg-slate-950 text-slate-400 rounded-xl text-xs">Restaurar Fundo Padrão</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROFILE MODAL -->
+    <div id="profileModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-blue-900/60 rounded-2xl w-full max-w-md p-6 text-slate-100 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold text-white"><i class="fa-solid fa-user-gear text-blue-500 mr-2"></i> Meu Perfil</h3>
+                <button onclick="closeProfileModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form onsubmit="saveProfileChanges(event)" class="space-y-4">
+                <div class="text-center">
+                    <div class="relative inline-block">
+                        <img id="editAvatarPreview" src="" class="w-24 h-24 rounded-full object-cover border-4 border-blue-600 shadow-xl mx-auto">
+                        <label class="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-500 p-2 rounded-full text-white cursor-pointer shadow-md">
+                            <i class="fa-solid fa-camera text-xs"></i>
+                            <input type="file" accept="image/*" class="hidden" onchange="previewAvatarUpload(event)">
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-blue-400 uppercase mb-1">Apelido (Nome de Exibição)</label>
+                    <input type="text" id="editDisplayName" required class="w-full bg-slate-950 border border-blue-900/60 rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-blue-400 uppercase mb-1">Status / Recado</label>
+                    <input type="text" id="editStatus" required class="w-full bg-slate-950 border border-blue-900/60 rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none focus:border-blue-500">
+                </div>
+
+                <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg transition">Salvar Alterações</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- FIREBASE REALTIME DATABASE SDK V10 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { 
+            getDatabase, ref, set, get, child, onValue, push, update, onDisconnect 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD3Q2P6lch9XxxYlJoEsdqqwwt3KBJgpFc",
+            authDomain: "projeto-a08cb.firebaseapp.com",
+            databaseURL: "https://projeto-a08cb-default-rtdb.firebaseio.com",
+            projectId: "projeto-a08cb",
+            storageBucket: "projeto-a08cb.firebasestorage.app",
+            messagingSenderId: "996658403778",
+            appId: "1:996658403778:web:cc2f2b3e70166f239a5e5b",
+            measurementId: "G-J0ZF3Y9SBQ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Exposing SDK functions globally
+        window.db = db;
+        window.fbRef = ref;
+        window.fbSet = set;
+        window.fbGet = get;
+        window.fbChild = child;
+        window.fbOnValue = onValue;
+        window.fbPush = push;
+        window.fbUpdate = update;
+        window.fbOnDisconnect = onDisconnect;
+    </script>
+
+    <!-- CORE LOGIC SCRIPT -->
+    <script>
+        let currentUser = null;
+        let activeChatTarget = null; // Can be a friend user object or a group object
+        let allUsersMap = {};
+        let myFriendsList = [];
+        let myGroupsList = [];
+        let callHistory = [];
+        let activeChatUnsub = null;
+        let globalChatsUnsubs = {};
+        let inAppNotifTimeout = null;
+        let currentTargetChatObject = null;
+        
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let recordStartTime = 0;
+        let recordTimerInterval = null;
+        let localStream = null;
+        let cameraStream = null;
+
+        const STICKER_PRESETS = [
+            "https://cdn-icons-png.flaticon.com/512/742/742751.png",
+            "https://cdn-icons-png.flaticon.com/512/742/742752.png",
+            "https://cdn-icons-png.flaticon.com/512/742/742760.png",
+            "https://cdn-icons-png.flaticon.com/512/742/742818.png",
+            "https://cdn-icons-png.flaticon.com/512/742/742784.png",
+            "https://cdn-icons-png.flaticon.com/512/742/742774.png"
+        ];
+
+        // Web Audio Synthesizer Effects
+        const AudioFX = {
+            ctx: null,
+            init() {
+                if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            },
+            playSend() {
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(300, this.ctx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.08);
+            },
+            playReceive() {
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(350, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(700, this.ctx.currentTime + 0.12);
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.12);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.12);
+            }
+        };
+
+        window.onload = () => {
+            renderStickerGrid();
+            checkNotificationStatus();
+            const savedUser = localStorage.getItem('wa_blue_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    initializeUserSession();
+                } catch(e) {
+                    localStorage.removeItem('wa_blue_user');
+                }
+            }
+        };
+
+        // NOTIFICATION CONTROLLER
+        window.requestNotificationPermission = async function() {
+            if ('Notification' in window) {
+                const perm = await Notification.requestPermission();
+                checkNotificationStatus();
+                if (perm === 'granted') {
+                    alert('Notificações no navegador ativadas com sucesso!');
+                } else if (perm === 'denied') {
+                    alert('Permissão de notificação negada nas configurações do navegador.');
+                }
+            } else {
+                alert('Seu navegador não suporta a API de Notificações.');
+            }
+        };
+
+        function checkNotificationStatus() {
+            const btn = document.getElementById('notifBellBtn');
+            if ('Notification' in window && Notification.permission === 'granted') {
+                btn.classList.remove('text-slate-400');
+                btn.classList.add('text-amber-400');
+                btn.title = 'Notificações no Navegador Ativas';
+            } else {
+                btn.classList.remove('text-amber-400');
+                btn.classList.add('text-slate-400');
+                btn.title = 'Clique para Ativar Notificações no Navegador';
+            }
+        }
+
+        function triggerMessageNotification(senderName, textContent, avatarUrl, timestamp, targetChatObj) {
+            const timeStr = new Date(timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            // 1. Play Receive Audio Chime
+            AudioFX.playReceive();
+
+            // 2. Native Web Notification (if tab is hidden or minimized)
+            if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+                try {
+                    const notif = new Notification(senderName, {
+                        body: `${textContent} • ${timeStr}`,
+                        icon: avatarUrl || 'https://placehold.co/100x100/1d4ed8/ffffff?text=WA',
+                        tag: 'wa-blue-msg'
+                    });
+                    notif.onclick = () => {
+                        window.focus();
+                        if (targetChatObj) {
+                            selectChatTarget(targetChatObj, targetChatObj.isGroup || false);
+                        }
+                    };
+                } catch (e) {
+                    console.error("Web Notification error:", e);
+                }
+            }
+
+            // 3. In-App Floating Toast Banner Notification
+            const banner = document.getElementById('inAppNotification');
+            document.getElementById('notifAvatar').src = avatarUrl || 'https://placehold.co/100x100/1d4ed8/ffffff?text=WA';
+            document.getElementById('notifSender').innerText = senderName;
+            document.getElementById('notifTime').innerText = timeStr;
+            document.getElementById('notifMessage').innerText = textContent;
+
+            currentTargetChatObject = targetChatObj;
+
+            document.getElementById('inAppNotifContent').onclick = (e) => {
+                if (e.target.closest('button')) return;
+                if (currentTargetChatObject) {
+                    selectChatTarget(currentTargetChatObject, currentTargetChatObject.isGroup || false);
+                }
+                dismissInAppNotif();
+            };
+
+            banner.classList.remove('hidden');
+
+            if (inAppNotifTimeout) clearTimeout(inAppNotifTimeout);
+            inAppNotifTimeout = setTimeout(() => {
+                dismissInAppNotif();
+            }, 5000);
+        }
+
+        window.dismissInAppNotif = function(e) {
+            if (e) e.stopPropagation();
+            document.getElementById('inAppNotification').classList.add('hidden');
+        };
+
+        // Switch Sidebar Tabs (1: Conversas, 2: Convites/Código, 3: Ligações)
+        window.switchSidebarTab = function(tabIndex) {
+            [1, 2, 3].forEach(idx => {
+                const tabBtn = document.getElementById(`navTab${idx}`);
+                const tabContent = document.getElementById(`tabContent${idx}`);
+                if (idx === tabIndex) {
+                    tabBtn.className = "flex-1 py-2.5 rounded-lg flex flex-col items-center justify-center gap-1 transition-all bg-blue-600 text-white shadow-md";
+                    tabContent.classList.remove('hidden');
+                } else {
+                    tabBtn.className = "flex-1 py-2.5 rounded-lg flex flex-col items-center justify-center gap-1 transition-all hover:text-white";
+                    tabContent.classList.add('hidden');
+                }
+            });
+        };
+
+        window.switchAuthTab = function(tab) {
+            const loginForm = document.getElementById('loginForm');
+            const regForm = document.getElementById('registerForm');
+            const tabLogin = document.getElementById('tabLogin');
+            const tabRegister = document.getElementById('tabRegister');
+
+            if (tab === 'login') {
+                loginForm.classList.remove('hidden');
+                regForm.classList.add('hidden');
+                tabLogin.className = "flex-1 py-2 text-sm font-semibold rounded-lg transition-all bg-blue-600 text-white shadow-lg";
+                tabRegister.className = "flex-1 py-2 text-sm font-semibold rounded-lg text-slate-400 hover:text-white transition-all";
+            } else {
+                loginForm.classList.add('hidden');
+                regForm.classList.remove('hidden');
+                tabRegister.className = "flex-1 py-2 text-sm font-semibold rounded-lg transition-all bg-blue-600 text-white shadow-lg";
+                tabLogin.className = "flex-1 py-2 text-sm font-semibold rounded-lg text-slate-400 hover:text-white transition-all";
+            }
+        };
+
+        function sanitizeUsername(name) {
+            return name.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+        }
+
+        // Generate 6-digit numeric friend code
+        function generateNumericCode() {
+            return Math.floor(100000 + Math.random() * 900000).toString();
+        }
+
+        // Registration & Login
+        window.handleAuthSubmit = async function(e, mode) {
+            e.preventDefault();
+            const alertBox = document.getElementById('authAlert');
+            alertBox.classList.add('hidden');
+
+            if (mode === 'register') {
+                const rawUser = document.getElementById('regUsername').value;
+                const username = sanitizeUsername(rawUser);
+                const displayName = document.getElementById('regDisplayName').value.trim();
+                const password = document.getElementById('regPassword').value;
+
+                if (!username || !displayName || !password) {
+                    showAlert('Preencha todos os campos.', 'error');
+                    return;
+                }
+
+                try {
+                    const userSnap = await window.fbGet(window.fbChild(window.fbRef(window.db), `users/${username}`));
+                    if (userSnap.exists()) {
+                        showAlert('Este nome de usuário já existe! Escolha outro.', 'error');
+                        return;
+                    }
+
+                    const friendCode = generateNumericCode();
+
+                    const newUser = {
+                        username: username,
+                        displayName: displayName,
+                        password: password,
+                        friendCode: friendCode,
+                        status: "Disponível no WhatsApp Blue",
+                        avatarUrl: `https://placehold.co/100x100/1d4ed8/ffffff?text=${displayName.charAt(0).toUpperCase()}`,
+                        online: true,
+                        lastSeen: Date.now()
+                    };
+
+                    // Save user record and code lookup
+                    await window.fbSet(window.fbRef(window.db, `users/${username}`), newUser);
+                    await window.fbSet(window.fbRef(window.db, `codes/${friendCode}`), username);
+
+                    currentUser = newUser;
+                    localStorage.setItem('wa_blue_user', JSON.stringify(currentUser));
+                    showAlert('Conta criada com sucesso!', 'success');
+                    
+                    if ('Notification' in window && Notification.permission === 'default') {
+                        Notification.requestPermission();
+                    }
+
+                    setTimeout(() => initializeUserSession(), 600);
+
+                } catch (err) {
+                    console.error("Register Error:", err);
+                    showAlert('Erro ao registrar no Firebase.', 'error');
+                }
+
+            } else { // Login
+                const rawUser = document.getElementById('loginUsername').value;
+                const username = sanitizeUsername(rawUser);
+                const password = document.getElementById('loginPassword').value;
+
+                try {
+                    const userSnap = await window.fbGet(window.fbChild(window.fbRef(window.db), `users/${username}`));
+                    if (!userSnap.exists()) {
+                        showAlert('Usuário não encontrado. Cadastre-se primeiro!', 'error');
+                        return;
+                    }
+
+                    const userData = userSnap.val();
+                    if (userData.password !== password) {
+                        showAlert('Senha incorreta!', 'error');
+                        return;
+                    }
+
+                    // Ensure friend code exists for existing users
+                    if (!userData.friendCode) {
+                        userData.friendCode = generateNumericCode();
+                        await window.fbUpdate(window.fbRef(window.db, `users/${username}`), { friendCode: userData.friendCode });
+                        await window.fbSet(window.fbRef(window.db, `codes/${userData.friendCode}`), username);
+                    }
+
+                    currentUser = userData;
+                    localStorage.setItem('wa_blue_user', JSON.stringify(currentUser));
+                    showAlert('Login efetuado com sucesso!', 'success');
+
+                    if ('Notification' in window && Notification.permission === 'default') {
+                        Notification.requestPermission();
+                    }
+
+                    setTimeout(() => initializeUserSession(), 600);
+
+                } catch (err) {
+                    console.error("Login Error:", err);
+                    showAlert('Erro ao realizar login.', 'error');
+                }
+            }
+        };
+
+        function showAlert(msg, type) {
+            const alertBox = document.getElementById('authAlert');
+            alertBox.innerText = msg;
+            alertBox.classList.remove('hidden', 'bg-rose-500/20', 'text-rose-300', 'bg-blue-500/20', 'text-blue-300');
+            if (type === 'error') alertBox.classList.add('bg-rose-500/20', 'text-rose-300');
+            else alertBox.classList.add('bg-blue-500/20', 'text-blue-300');
+        }
+
+        function initializeUserSession() {
+            document.getElementById('authScreen').classList.add('hidden');
+
+            document.getElementById('myAvatar').src = currentUser.avatarUrl;
+            document.getElementById('myNickname').innerText = currentUser.displayName;
+            document.getElementById('myCodeDisplay').innerText = `Cód: ${currentUser.friendCode}`;
+            document.getElementById('myCodeNum').innerText = currentUser.friendCode;
+
+            const userRef = window.fbRef(window.db, `users/${currentUser.username}`);
+            window.fbUpdate(userRef, { online: true });
+
+            const presenceRef = window.fbChild(userRef, 'online');
+            window.fbOnDisconnect(presenceRef).set(false);
+
+            checkNotificationStatus();
+            listenToUsersAndFriends();
+            listenToGroups();
+            listenForIncomingCalls();
+        }
+
+        window.logout = function() {
+            if (currentUser) {
+                window.fbUpdate(window.fbRef(window.db, `users/${currentUser.username}`), { online: false });
+            }
+            localStorage.removeItem('wa_blue_user');
+            location.reload();
+        };
+
+        // Realtime Listener for Users & User's Friends
+        function listenToUsersAndFriends() {
+            const usersRef = window.fbRef(window.db, 'users');
+            window.fbOnValue(usersRef, (snapshot) => {
+                allUsersMap = snapshot.val() || {};
+                
+                const myFriendsRef = window.fbRef(window.db, `friends/${currentUser.username}`);
+                window.fbOnValue(myFriendsRef, (friendSnap) => {
+                    const friendUsernames = Object.keys(friendSnap.val() || {});
+                    myFriendsList = friendUsernames.map(u => allUsersMap[u]).filter(Boolean);
+                    renderChatAndFriendsList();
+                    attachGlobalNotificationListeners();
+                });
+            });
+        }
+
+        // Realtime Listener for Groups
+        function listenToGroups() {
+            const groupsRef = window.fbRef(window.db, 'groups');
+            window.fbOnValue(groupsRef, (snapshot) => {
+                const groupsVal = snapshot.val() || {};
+                myGroupsList = Object.values(groupsVal).filter(g => g.members && g.members[currentUser.username]);
+                renderChatAndFriendsList();
+                attachGlobalNotificationListeners();
+            });
+        }
+
+        // Attach global listeners to trigger notifications for background chats
+        function attachGlobalNotificationListeners() {
+            if (!currentUser) return;
+
+            // 1. Listen to Direct Chats
+            myFriendsList.forEach(friend => {
+                const channelId = [currentUser.username.toLowerCase(), friend.username.toLowerCase()].sort().join('_');
+                if (globalChatsUnsubs[channelId]) return; // Already listening
+
+                let initialLoadDone = false;
+                const chatRef = window.fbRef(window.db, `chats/${channelId}`);
+                
+                window.fbOnValue(chatRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (!data) return;
+
+                    const msgs = Object.values(data);
+                    const lastMsg = msgs[msgs.length - 1];
+
+                    if (initialLoadDone && lastMsg) {
+                        const isCurrentActive = activeChatTarget && !activeChatTarget.isGroup && activeChatTarget.username === friend.username;
+                        const isFromOther = lastMsg.sender !== currentUser.username;
+                        const isRecent = (Date.now() - (lastMsg.timestamp || 0)) < 10000;
+
+                        if (isFromOther && isRecent && (!isCurrentActive || document.hidden)) {
+                            let textSnippet = lastMsg.content;
+                            if (lastMsg.type === 'image') textSnippet = '📷 Foto';
+                            else if (lastMsg.type === 'audio') textSnippet = '🎤 Áudio';
+                            else if (lastMsg.type === 'sticker') textSnippet = '🎨 Figurinha';
+
+                            triggerMessageNotification(
+                                friend.displayName,
+                                textSnippet,
+                                friend.avatarUrl,
+                                lastMsg.timestamp,
+                                friend
+                            );
+                        }
+                    }
+                    initialLoadDone = true;
+                });
+
+                globalChatsUnsubs[channelId] = true;
+            });
+
+            // 2. Listen to Group Chats
+            myGroupsList.forEach(group => {
+                const channelId = group.id;
+                if (globalChatsUnsubs[channelId]) return;
+
+                let initialLoadDone = false;
+                const groupChatRef = window.fbRef(window.db, `chats/${channelId}`);
+
+                window.fbOnValue(groupChatRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (!data) return;
+
+                    const msgs = Object.values(data);
+                    const lastMsg = msgs[msgs.length - 1];
+
+                    if (initialLoadDone && lastMsg) {
+                        const isCurrentActive = activeChatTarget && activeChatTarget.isGroup && activeChatTarget.id === group.id;
+                        const isFromOther = lastMsg.sender !== currentUser.username;
+                        const isRecent = (Date.now() - (lastMsg.timestamp || 0)) < 10000;
+
+                        if (isFromOther && isRecent && (!isCurrentActive || document.hidden)) {
+                            let textSnippet = lastMsg.content;
+                            if (lastMsg.type === 'image') textSnippet = '📷 Foto';
+                            else if (lastMsg.type === 'audio') textSnippet = '🎤 Áudio';
+                            else if (lastMsg.type === 'sticker') textSnippet = '🎨 Figurinha';
+
+                            const senderName = `${lastMsg.senderName || lastMsg.sender} em ${group.name}`;
+                            const groupAvatar = `https://placehold.co/100x100/1d4ed8/ffffff?text=${group.name.charAt(0).toUpperCase()}`;
+
+                            triggerMessageNotification(
+                                senderName,
+                                textSnippet,
+                                groupAvatar,
+                                lastMsg.timestamp,
+                                group
+                            );
+                        }
+                    }
+                    initialLoadDone = true;
+                });
+
+                globalChatsUnsubs[channelId] = true;
+            });
+        }
+
+        // Render Combined Chats & Friends List with Filter
+        window.filterChatList = function() {
+            renderChatAndFriendsList();
+        };
+
+        function renderChatAndFriendsList() {
+            const container = document.getElementById('chatList');
+            container.innerHTML = '';
+
+            const searchTerm = (document.getElementById('chatSearchInput')?.value || '').toLowerCase().trim();
+
+            const filteredGroups = myGroupsList.filter(g => g.name.toLowerCase().includes(searchTerm));
+            const filteredFriends = myFriendsList.filter(u => u.displayName.toLowerCase().includes(searchTerm) || u.username.toLowerCase().includes(searchTerm));
+
+            if (filteredFriends.length === 0 && filteredGroups.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center text-slate-400 text-xs">
+                        <i class="fa-solid fa-user-plus text-3xl mb-2 text-blue-500/50 block"></i>
+                        <p class="font-semibold text-slate-300">Nenhum resultado encontrado!</p>
+                        <p class="mt-1 text-[11px]">Vá na aba <span class="text-blue-400 font-bold">Convites</span> para adicionar novos contatos.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Render Groups First
+            filteredGroups.forEach(group => {
+                const isActive = activeChatTarget && activeChatTarget.isGroup && activeChatTarget.id === group.id;
+                const item = document.createElement('div');
+                item.className = `p-3 flex items-center gap-3 cursor-pointer transition hover:bg-blue-900/30 ${isActive ? 'bg-blue-900/50 border-l-4 border-blue-500' : ''}`;
+                item.onclick = () => selectChatTarget(group, true);
+
+                item.innerHTML = `
+                    <div class="relative shrink-0">
+                        <div class="w-11 h-11 rounded-full bg-blue-600 flex items-center justify-center text-white text-lg font-bold border border-blue-400 shadow-md">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-hidden">
+                        <div class="flex justify-between items-baseline">
+                            <h4 class="font-semibold text-sm text-white truncate">${group.name}</h4>
+                            <span class="text-[10px] text-blue-400 uppercase font-bold">Grupo</span>
+                        </div>
+                        <p class="text-xs text-slate-400 truncate mt-0.5">${Object.keys(group.members || {}).length} membros</p>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+
+            // Render Direct Friends
+            filteredFriends.forEach(user => {
+                const isActive = activeChatTarget && !activeChatTarget.isGroup && activeChatTarget.username === user.username;
+                const item = document.createElement('div');
+                item.className = `p-3 flex items-center gap-3 cursor-pointer transition hover:bg-blue-900/30 ${isActive ? 'bg-blue-900/50 border-l-4 border-blue-500' : ''}`;
+                item.onclick = () => selectChatTarget(user, false);
+
+                item.innerHTML = `
+                    <div class="relative shrink-0">
+                        <img src="${user.avatarUrl}" class="w-11 h-11 rounded-full object-cover border border-blue-800">
+                        <span class="w-3 h-3 ${user.online ? 'bg-blue-500' : 'bg-slate-500'} rounded-full absolute bottom-0 right-0 border-2 border-slate-900"></span>
+                    </div>
+                    <div class="flex-1 overflow-hidden">
+                        <div class="flex justify-between items-baseline">
+                            <h4 class="font-semibold text-sm text-white truncate">${user.displayName}</h4>
+                            <span class="text-[10px] text-blue-400">@${user.username}</span>
+                        </div>
+                        <p class="text-xs text-slate-400 truncate mt-0.5">${user.status || 'Disponível'}</p>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // Add Friend By Numeric Code
+        window.handleAddByCode = async function(e) {
+            e.preventDefault();
+            const input = document.getElementById('friendCodeInput');
+            const code = input.value.trim();
+            const feedback = document.getElementById('codeFeedback');
+            feedback.classList.add('hidden');
+
+            if (!code || code.length < 6) {
+                showCodeFeedback('Digite um código numérico válido.', 'error');
+                return;
+            }
+
+            try {
+                const codeSnap = await window.fbGet(window.fbChild(window.fbRef(window.db), `codes/${code}`));
+                if (!codeSnap.exists()) {
+                    showCodeFeedback('Código de amigo não encontrado.', 'error');
+                    return;
+                }
+
+                const friendUsername = codeSnap.val();
+                if (friendUsername === currentUser.username) {
+                    showCodeFeedback('Você não pode adicionar seu próprio código.', 'error');
+                    return;
+                }
+
+                // Add to mutual friends list
+                await window.fbSet(window.fbRef(window.db, `friends/${currentUser.username}/${friendUsername}`), true);
+                await window.fbSet(window.fbRef(window.db, `friends/${friendUsername}/${currentUser.username}`), true);
+
+                showCodeFeedback('Amigo adicionado com sucesso! Vá para a aba Conversas.', 'success');
+                input.value = '';
+
+            } catch (err) {
+                console.error(err);
+                showCodeFeedback('Erro ao adicionar amigo.', 'error');
+            }
+        };
+
+        function showCodeFeedback(msg, type) {
+            const fb = document.getElementById('codeFeedback');
+            fb.innerText = msg;
+            fb.classList.remove('hidden', 'text-rose-400', 'text-blue-400');
+            fb.classList.add(type === 'error' ? 'text-rose-400' : 'text-blue-400');
+        }
+
+        window.copyFriendCode = function() {
+            navigator.clipboard.writeText(currentUser.friendCode);
+            alert(`Código ${currentUser.friendCode} copiado para a área de transferência!`);
+        };
+
+        window.copyInviteLink = function() {
+            const link = `${window.location.origin}${window.location.pathname}?code=${currentUser.friendCode}`;
+            navigator.clipboard.writeText(link);
+            alert("Link de convite gerado e copiado!");
+        };
+
+        // Create Group Functions
+        window.openCreateGroupModal = function() {
+            const list = document.getElementById('groupMembersList');
+            list.innerHTML = '';
+
+            if (myFriendsList.length === 0) {
+                list.innerHTML = `<p class="text-xs text-slate-500 p-2">Adicione amigos primeiro para criar um grupo.</p>`;
+            } else {
+                myFriendsList.forEach(friend => {
+                    const label = document.createElement('label');
+                    label.className = "flex items-center gap-3 p-2 hover:bg-blue-900/40 rounded-lg cursor-pointer text-xs text-white";
+                    label.innerHTML = `
+                        <input type="checkbox" value="${friend.username}" class="group-member-checkbox rounded border-blue-800 text-blue-600 focus:ring-0">
+                        <img src="${friend.avatarUrl}" class="w-7 h-7 rounded-full object-cover">
+                        <span>${friend.displayName} (@${friend.username})</span>
+                    `;
+                    list.appendChild(label);
+                });
+            }
+
+            document.getElementById('createGroupModal').classList.remove('hidden');
+        };
+
+        window.closeCreateGroupModal = function() {
+            document.getElementById('createGroupModal').classList.add('hidden');
+        };
+
+        window.handleCreateGroupSubmit = async function(e) {
+            e.preventDefault();
+            const groupName = document.getElementById('groupNameInput').value.trim();
+            const checkboxes = document.querySelectorAll('.group-member-checkbox:checked');
+
+            if (!groupName) return;
+
+            const membersMap = {};
+            membersMap[currentUser.username] = true;
+            checkboxes.forEach(cb => membersMap[cb.value] = true);
+
+            const groupId = 'group_' + Date.now();
+            const newGroup = {
+                id: groupId,
+                name: groupName,
+                createdBy: currentUser.username,
+                members: membersMap,
+                createdAt: Date.now(),
+                isGroup: true
+            };
+
+            await window.fbSet(window.fbRef(window.db, `groups/${groupId}`), newGroup);
+            closeCreateGroupModal();
+            document.getElementById('groupNameInput').value = '';
+            selectChatTarget(newGroup, true);
+        };
+
+        // Select Chat Target (Direct Friend or Group)
+        function selectChatTarget(target, isGroup) {
+            activeChatTarget = target;
+            activeChatTarget.isGroup = isGroup;
+
+            document.getElementById('noChatSelected').classList.add('hidden');
+            document.getElementById('activeChatContainer').classList.remove('hidden');
+            document.getElementById('chatArea').classList.remove('translate-x-full');
+
+            if (isGroup) {
+                document.getElementById('activeContactAvatar').src = `https://placehold.co/100x100/1d4ed8/ffffff?text=${target.name.charAt(0).toUpperCase()}`;
+                document.getElementById('activeContactName').innerText = target.name;
+                document.getElementById('activeContactStatus').innerText = `Grupo • ${Object.keys(target.members || {}).length} membros`;
+                document.getElementById('activeContactStatusBadge').className = 'hidden';
+            } else {
+                document.getElementById('activeContactAvatar').src = target.avatarUrl;
+                document.getElementById('activeContactName').innerText = target.displayName;
+                document.getElementById('activeContactStatus').innerText = target.online ? 'Online' : 'Offline';
+                document.getElementById('activeContactStatusBadge').className = `w-3 h-3 ${target.online ? 'bg-blue-500' : 'bg-slate-500'} rounded-full absolute bottom-0 right-0 border-2 border-slate-900`;
+            }
+
+            renderChatAndFriendsList();
+            listenToChatMessages();
+        }
+
+        window.closeMobileChat = function() {
+            document.getElementById('chatArea').classList.add('translate-x-full');
+        };
+
+        function getChatChannelId() {
+            if (activeChatTarget.isGroup) {
+                return activeChatTarget.id;
+            } else {
+                return [currentUser.username.toLowerCase(), activeChatTarget.username.toLowerCase()].sort().join('_');
+            }
+        }
+
+        // Realtime Messages Listener
+        function listenToChatMessages() {
+            if (!currentUser || !activeChatTarget) return;
+
+            const channelId = getChatChannelId();
+            const chatRef = window.fbRef(window.db, `chats/${channelId}`);
+
+            window.fbOnValue(chatRef, (snapshot) => {
+                const container = document.getElementById('messagesContainer');
+                container.innerHTML = '';
+
+                const data = snapshot.val();
+                if (!data) {
+                    container.innerHTML = `
+                        <div class="h-full flex items-center justify-center">
+                            <span class="bg-slate-900/90 text-blue-300 text-xs px-4 py-2 rounded-xl border border-blue-900/50">
+                                Inicie a conversa no WhatsApp Blue! 👋
+                            </span>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const msgs = Object.values(data);
+                msgs.forEach(msg => {
+                    const isMine = msg.sender === currentUser.username;
+                    const bubble = renderBubble(msg, isMine);
+                    container.appendChild(bubble);
+                });
+
+                container.scrollTop = container.scrollHeight;
+            });
+        }
+
+        function renderBubble(msg, isMine) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex ${isMine ? 'justify-end' : 'justify-start'} mb-2`;
+
+            const bubble = document.createElement('div');
+            bubble.className = `max-w-[75%] rounded-2xl p-3 shadow-md ${isMine ? 'bubble-outgoing text-white rounded-tr-none' : 'bubble-incoming text-slate-100 rounded-tl-none border border-blue-900/40'}`;
+
+            let senderNameHtml = '';
+            if (!isMine && activeChatTarget.isGroup) {
+                senderNameHtml = `<p class="text-[10px] font-bold text-blue-400 mb-1">~ ${msg.senderName || msg.sender}</p>`;
+            }
+
+            let html = '';
+            if (msg.type === 'text') {
+                html = `<p class="text-sm whitespace-pre-wrap break-words">${escapeHTML(msg.content)}</p>`;
+            } else if (msg.type === 'image') {
+                html = `<img src="${msg.content}" class="max-w-full max-h-60 rounded-xl cursor-pointer" onclick="window.open('${msg.content}')">`;
+            } else if (msg.type === 'audio') {
+                html = `<audio controls class="h-8 max-w-[220px]"><source src="${msg.content}" type="audio/webm"></audio>`;
+            } else if (msg.type === 'sticker') {
+                html = `<img src="${msg.content}" class="w-24 h-24 object-contain">`;
+            }
+
+            const time = new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            bubble.innerHTML = `
+                ${senderNameHtml}
+                ${html}
+                <div class="flex items-center justify-end gap-1 text-[10px] opacity-70 mt-1">
+                    <span>${time}</span>
+                    ${isMine ? '<i class="fa-solid fa-check-double text-sky-300"></i>' : ''}
+                </div>
+            `;
+
+            wrapper.appendChild(bubble);
+            return wrapper;
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+        }
+
+        window.sendTextMessage = function(e) {
+            e.preventDefault();
+            const input = document.getElementById('messageInput');
+            const val = input.value.trim();
+            if (!val || !activeChatTarget) return;
+
+            postMessage('text', val);
+            input.value = '';
+            AudioFX.playSend();
+        };
+
+        function postMessage(type, content) {
+            const channelId = getChatChannelId();
+            const chatRef = window.fbRef(window.db, `chats/${channelId}`);
+
+            const newMsg = {
+                sender: currentUser.username,
+                senderName: currentUser.displayName,
+                type: type,
+                content: content,
+                timestamp: Date.now()
+            };
+
+            window.fbPush(chatRef, newMsg);
+        }
+
+        window.toggleAttachMenu = function() {
+            document.getElementById('attachMenu').classList.toggle('hidden');
+        };
+
+        window.uploadImageMessage = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                postMessage('image', evt.target.result);
+                AudioFX.playSend();
+                document.getElementById('attachMenu').classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        };
+
+        function renderStickerGrid() {
+            const grid = document.getElementById('stickerGrid');
+            grid.innerHTML = '';
+            STICKER_PRESETS.forEach(url => {
+                const img = document.createElement('img');
+                img.src = url;
+                img.className = 'w-10 h-10 object-contain cursor-pointer p-1 hover:scale-110 transition rounded-lg hover:bg-blue-900/40';
+                img.onclick = () => {
+                    postMessage('sticker', url);
+                    AudioFX.playSend();
+                    toggleStickerDrawer();
+                };
+                grid.appendChild(img);
+            });
+        }
+
+        window.toggleStickerDrawer = function() {
+            document.getElementById('stickerDrawer').classList.toggle('hidden');
+            document.getElementById('attachMenu').classList.add('hidden');
+        };
+
+        // Audio Recording
+        window.startAudioRecording = async function() {
+            if (!navigator.mediaDevices?.getUserMedia) {
+                alert("Navegador não suporta gravação.");
+                return;
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) audioChunks.push(e.data);
+                };
+
+                mediaRecorder.start();
+                recordStartTime = Date.now();
+
+                document.getElementById('audioRecordBar').classList.remove('hidden');
+                document.getElementById('msgForm').classList.add('hidden');
+                document.getElementById('micBtn').classList.add('hidden');
+
+                recordTimerInterval = setInterval(() => {
+                    const elapsed = Math.floor((Date.now() - recordStartTime) / 1000);
+                    const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+                    const secs = String(elapsed % 60).padStart(2, '0');
+                    document.getElementById('recordTimer').innerText = `${mins}:${secs}`;
+                }, 1000);
+
+            } catch (err) {
+                alert("Acesso ao microfone foi recusado.");
+            }
+        };
+
+        window.cancelAudioRecording = function() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+            resetAudioUI();
+        };
+
+        window.stopAndSendAudio = function() {
+            if (!mediaRecorder) return;
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    postMessage('audio', evt.target.result);
+                    AudioFX.playSend();
+                };
+                reader.readAsDataURL(audioBlob);
+                resetAudioUI();
+            };
+            mediaRecorder.stop();
+        };
+
+        function resetAudioUI() {
+            clearInterval(recordTimerInterval);
+            document.getElementById('audioRecordBar').classList.add('hidden');
+            document.getElementById('msgForm').classList.remove('hidden');
+            document.getElementById('micBtn').classList.remove('hidden');
+            document.getElementById('recordTimer').innerText = '00:00';
+        }
+
+        // Camera Capture
+        window.triggerCameraCapture = async function() {
+            document.getElementById('attachMenu').classList.add('hidden');
+            const modal = document.getElementById('cameraModal');
+            const video = document.getElementById('cameraPreview');
+
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                video.srcObject = cameraStream;
+                modal.classList.remove('hidden');
+            } catch (err) {
+                alert("Não foi possível acessar a webcam.");
+            }
+        };
+
+        window.closeCameraModal = function() {
+            if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+            document.getElementById('cameraModal').classList.add('hidden');
+        };
+
+        window.takeSnapAndSend = function() {
+            const video = document.getElementById('cameraPreview');
+            const canvas = document.getElementById('cameraCanvas');
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const imgData = canvas.toDataURL('image/jpeg');
+            postMessage('image', imgData);
+            AudioFX.playSend();
+            closeCameraModal();
+        };
+
+        // Calls & History Logging
+        window.startCall = async function(type) {
+            if (!activeChatTarget || activeChatTarget.isGroup) return;
+
+            const targetName = activeChatTarget.displayName;
+            const modal = document.getElementById('callModal');
+            document.getElementById('callContactName').innerText = targetName;
+            document.getElementById('callStatusText').innerText = 'Conectando rede...';
+            document.getElementById('callTypeBadge').innerText = type === 'video' ? 'Chamada de Vídeo' : 'Ligação de Voz';
+            modal.classList.remove('hidden');
+
+            // Log Call History Record
+            addCallHistoryRecord(targetName, type, 'Efetuada');
+
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    audio: true,
+                    video: type === 'video'
+                });
+
+                document.getElementById('localVideo').srcObject = localStream;
+
+                const callRef = window.fbRef(window.db, `calls/${activeChatTarget.username}`);
+                window.fbSet(callRef, {
+                    caller: currentUser.username,
+                    callerName: currentUser.displayName,
+                    type: type,
+                    status: 'calling',
+                    timestamp: Date.now()
+                });
+
+                setTimeout(() => {
+                    document.getElementById('callStatusText').innerText = 'Conectado';
+                }, 1500);
+
+            } catch (err) {
+                alert("Não foi possível acessar microfone/câmera.");
+                endCall();
+            }
+        };
+
+        function addCallHistoryRecord(name, type, status) {
+            const record = {
+                name: name,
+                type: type,
+                status: status,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+            callHistory.unshift(record);
+            renderCallHistory();
+        }
+
+        function renderCallHistory() {
+            const list = document.getElementById('callHistoryList');
+            if (callHistory.length === 0) {
+                list.innerHTML = `<div class="p-8 text-center text-slate-400 text-xs">Nenhuma ligação recente.</div>`;
+                return;
+            }
+
+            list.innerHTML = '';
+            callHistory.forEach(call => {
+                const item = document.createElement('div');
+                item.className = 'p-3 flex items-center justify-between text-xs text-slate-200 hover:bg-blue-900/30 rounded-xl transition';
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400">
+                            <i class="fa-solid fa-${call.type === 'video' ? 'video' : 'phone'}"></i>
+                        </div>
+                        <div>
+                            <h5 class="font-bold text-white">${call.name}</h5>
+                            <p class="text-[10px] text-slate-400">${call.status} • ${call.time}</p>
+                        </div>
+                    </div>
+                    <span class="text-[10px] bg-blue-900/40 text-blue-300 px-2 py-0.5 rounded-full">${call.type}</span>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        window.clearCallHistory = function() {
+            callHistory = [];
+            renderCallHistory();
+        };
+
+        window.endCall = function() {
+            if (localStream) localStream.getTracks().forEach(t => t.stop());
+            if (activeChatTarget && !activeChatTarget.isGroup) {
+                window.fbSet(window.fbRef(window.db, `calls/${activeChatTarget.username}`), null);
+            }
+            document.getElementById('callModal').classList.add('hidden');
+        };
+
+        function listenForIncomingCalls() {
+            const myCallRef = window.fbRef(window.db, `calls/${currentUser.username}`);
+            window.fbOnValue(myCallRef, (snapshot) => {
+                const callData = snapshot.val();
+                if (callData && callData.status === 'calling') {
+                    AudioFX.playReceive();
+                    addCallHistoryRecord(callData.callerName, callData.type, 'Recebida');
+                    if (confirm(`Chamada de ${callData.type === 'video' ? 'Vídeo' : 'Voz'} recebida de ${callData.callerName}. Aceitar?`)) {
+                        startCall(callData.type);
+                    } else {
+                        window.fbSet(myCallRef, null);
+                    }
+                }
+            });
+        }
+
+        window.startScreenShare = async function() {
+            try {
+                const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                const modal = document.getElementById('callModal');
+                document.getElementById('callContactName').innerText = "Transmissão de Tela";
+                document.getElementById('callStatusText').innerText = "Transmitindo...";
+                document.getElementById('callTypeBadge').innerText = "Compartilhamento de Tela";
+                document.getElementById('remoteVideo').srcObject = stream;
+                document.getElementById('noRemoteVideoPlaceholder').classList.add('hidden');
+                modal.classList.remove('hidden');
+
+                addCallHistoryRecord("Transmissão de Tela", "screen", "Efetuada");
+
+                stream.getVideoTracks()[0].onended = () => modal.classList.add('hidden');
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        window.startScreenShareInCall = async function() {
+            try {
+                const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                document.getElementById('localVideo').srcObject = screenStream;
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        window.toggleMuteMic = function() {
+            if (localStream) {
+                const t = localStream.getAudioTracks()[0];
+                if (t) {
+                    t.enabled = !t.enabled;
+                    document.getElementById('toggleMicBtn').classList.toggle('bg-rose-600');
+                }
+            }
+        };
+
+        window.toggleMuteCam = function() {
+            if (localStream) {
+                const t = localStream.getVideoTracks()[0];
+                if (t) {
+                    t.enabled = !t.enabled;
+                    document.getElementById('toggleCamBtn').classList.toggle('bg-rose-600');
+                }
+            }
+        };
+
+        // Settings & Themes
+        window.openSettingsModal = function() { document.getElementById('settingsModal').classList.remove('hidden'); };
+        window.closeSettingsModal = function() { document.getElementById('settingsModal').classList.add('hidden'); };
+
+        window.setAppTheme = function(theme) {
+            const root = document.documentElement;
+            if (theme === 'royal') root.style.setProperty('--app-bubble-out', '#1d4ed8');
+            else if (theme === 'indigo') root.style.setProperty('--app-bubble-out', '#4f46e5');
+            else if (theme === 'cyan') root.style.setProperty('--app-bubble-out', '#0891b2');
+            else if (theme === 'dark') root.style.setProperty('--app-bubble-out', '#334155');
+            closeSettingsModal();
+        };
+
+        window.setCustomWallpaper = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const container = document.getElementById('messagesContainer');
+                container.style.backgroundImage = `url('${evt.target.result}')`;
+                container.style.backgroundSize = 'cover';
+                closeSettingsModal();
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.resetWallpaper = function() {
+            const container = document.getElementById('messagesContainer');
+            container.style.backgroundImage = '';
+            closeSettingsModal();
+        };
+
+        // Profile Modal
+        window.openProfileModal = function() {
+            document.getElementById('editAvatarPreview').src = currentUser.avatarUrl;
+            document.getElementById('editDisplayName').value = currentUser.displayName;
+            document.getElementById('editStatus').value = currentUser.status;
+            document.getElementById('profileModal').classList.remove('hidden');
+        };
+
+        window.closeProfileModal = function() { document.getElementById('profileModal').classList.add('hidden'); };
+
+        window.previewAvatarUpload = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                document.getElementById('editAvatarPreview').src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.saveProfileChanges = async function(e) {
+            e.preventDefault();
+            const newName = document.getElementById('editDisplayName').value.trim();
+            const newStatus = document.getElementById('editStatus').value.trim();
+            const newAvatar = document.getElementById('editAvatarPreview').src;
+
+            currentUser.displayName = newName;
+            currentUser.status = newStatus;
+            currentUser.avatarUrl = newAvatar;
+
+            const userRef = window.fbRef(window.db, `users/${currentUser.username}`);
+            await window.fbUpdate(userRef, {
+                displayName: newName,
+                status: newStatus,
+                avatarUrl: newAvatar
+            });
+
+            localStorage.setItem('wa_blue_user', JSON.stringify(currentUser));
+            document.getElementById('myAvatar').src = newAvatar;
+            document.getElementById('myNickname').innerText = newName;
+
+            closeProfileModal();
+        };
+    </script>
+</body>
+</html>
